@@ -32,7 +32,7 @@ const Link = styled('a')(() => ({
 const TopNavbar = () => {
   return (
   <Headroom>
-    <div>
+    <div style={{position: 'fixed', width: '100%', top: 0}}>
       <Navbar>
         <ul style={{margin:0}}>
           <ListItem>
