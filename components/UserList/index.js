@@ -1,4 +1,4 @@
-import React, { Component } from 'react';
+import React, {useEffect, useState} from 'react';
 import styled from '@emotion/styled';
 import axios from 'axios';
 
@@ -35,98 +35,90 @@ const columnFields = [
   { value: 'website', label: 'Website' },
 ];
 
-const withUserData = WrappedComponent =>
-  class WithUserData extends Component {
-    state = {
-      users: [],
-      filteredUsers: [],
-      searchName: '',
-      searchEmail: '',
-      sortColumn: columnFields[0].value,
-      sortDirection: 'asc',
-    };
+const withUserData = (WrappedComponent) => {
+  const WithUserData = (props) => {
+   const [users,setUsers] = useState([]);
+   const [filteredUsers,setFilteredUsers] = useState([]);
+   const [searchName,setSearchName] = useState('');
+   const [searchEmail,setSearchEmail] = useState('');
+   const [sortColumn,setSortColumn] = useState(columnFields[0].value);
+   const [sortDirection,setSortDirection] = useState('asc');
 
-    async componentDidMount() {
+   useEffect( () => {
+     const fetchUsers = async () =>{
       const { data: users } = await axios.get('/api/v1/users');
+      setUsers(users);
+      setFilteredUsers(users);
+      };
+      fetchUsers();
+    }, []);
 
-      this.setState({
-        users,
-        filteredUsers: users,
-      });
-    }
+    useEffect(()=>{
+      let filteredUsers = users.filter(
+        (user) =>
+          user.name
+            .toLowerCase()
+            .includes(searchName.toLowerCase()) &&
+          user.email
+            .toLowerCase()
+            .includes(searchEmail.toLowerCase()),
+      );
 
-    componentDidUpdate(prevProps, prevState) {
-      if (
-        prevState.searchName !== this.state.searchName ||
-        prevState.searchEmail !== this.state.searchEmail ||
-        prevState.users !== this.state.users ||
-        prevState.sortColumn !== this.state.sortColumn ||
-        prevState.sortDirection !== this.state.sortDirection
-      ) {
-        let filteredUsers = this.state.users.filter(
-          user =>
-            user.name
-              .toLowerCase()
-              .includes(this.state.searchName.toLowerCase()) &&
-            user.email
-              .toLowerCase()
-              .includes(this.state.searchEmail.toLowerCase()),
-        );
+      if (sortColumn) {
+        filteredUsers.sort((a, b) => {
+          const x = a[sortColumn];
+          const y = b[sortColumn];
+          if (x < y) return sortDirection === 'asc' ? -1 : 1;
+          if (x > y) return sortDirection === 'asc' ? 1 : -1;
+          return 0;
+        });
+      } setFilteredUsers(filteredUsers);
+          },[searchName, searchEmail, users, sortColumn, sortDirection]);
+        
+    
 
-        if (this.state.sortColumn) {
-          filteredUsers.sort((a, b) => {
-            const x = a[this.state.sortColumn];
-            const y = b[this.state.sortColumn];
-            if (x < y) return this.state.sortDirection === 'asc' ? -1 : 1;
-            if (x > y) return this.state.sortDirection === 'asc' ? 1 : -1;
-            return 0;
-          });
-        }
-
-        this.setState({ filteredUsers });
-      }
-    }
-
-    handleOnSearch = event => {
-      let { name, value } = event.target;
+    const handleOnSearch = (event) => {
+      const { name, value } = event.target;
 
       if (name === 'name') {
-        name = 'searchName';
+        setSearchName(value);
+        
       } else if (name === 'email') {
         name = 'searchEmail';
       } else {
         throw new Error('Unknown search element');
       }
 
-      this.setState({ [name]: value });
+      
     };
+    const handleSort = (column) => {
+      if (sortColumn === column) {
+        setSortDirection((prevDirection) => (
+          prevDirection === 'asc' ? 'desc' : 'asc'));
 
-    handleSort = column => {
-      if (this.state.sortColumn === column) {
-        this.setState(prevState => ({
-          sortDirection: prevState.sortDirection === 'asc' ? 'desc' : 'asc',
-        }));
+    
       } else {
-        this.setState({ sortColumn: column, sortDirection: 'asc' });
+        setSortColumn(column);
+        setSortDirection('asc');
+        
       }
     };
 
-    render() {
-      return (
-        <WrappedComponent
-          users={this.state.filteredUsers}
-          columnFields={columnFields}
-          handleOnSearch={this.handleOnSearch}
-          handleSort={this.handleSort}
-          sortColumn={this.state.sortColumn}
-          sortDirection={this.state.sortDirection}
-        />
-      );
-    }
+    return (
+      <WrappedComponent
+      {...props}
+        users={filteredUsers}
+        columnFields={columnFields}
+        handleOnSearch={handleOnSearch}
+        handleSort={handleSort}
+        sortColumn={sortColumn}
+        sortDirection={sortDirection}
+      />
+    );
   };
-
-class UserList extends Component {
-  render() {
+  return WithUserData;
+};
+const UserList = (props) => {
     const {
       users,
       columnFields,
@@ -134,14 +126,13 @@ class UserList extends Component {
       handleSort,
       sortColumn,
       sortDirection,
-    } = this.props;
-    return (
+    } = props;
+    return (  
       <div>
         <Table>
           <thead>
             <tr>
-              {columnFields.map(field => {
-                return (
+            {columnFields.map((field) => (
                   <th key={field.value}>
                     <div
                       onClick={() => handleSort(field.value)}
@@ -166,12 +157,11 @@ class UserList extends Component {
                       />
                     ) : null}
                   </th>
-                );
-              })}
+            ))}   
             </tr>
           </thead>
           <tbody>
-            {users.map(user => (
+          {users.map((user) => (
               <tr key={user.id}>
                 {columnFields.map(field => (
                   <td key={field.value}>{user[field.value]}</td>
@@ -180,10 +170,8 @@ class UserList extends Component {
             ))}
           </tbody>
         </Table>
-        <div></div>
       </div>
     );
   }
-}
 
 export default withUserData(UserList);

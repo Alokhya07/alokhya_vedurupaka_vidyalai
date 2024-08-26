@@ -1,11 +1,11 @@
 import React from 'react';
 import styled from '@emotion/styled';
-
+import Headroom from 'react-headroom';
 const Navbar = styled('nav')(() => ({
   backgroundColor: '#333',
   color: '#fff',
   width: '100%',
-  position: 'absolute',
+ 
   top: 0,
   left: 0,
   zIndex: 1000,
@@ -13,6 +13,8 @@ const Navbar = styled('nav')(() => ({
 
 const ListItem = styled('li')(() => ({
   display: 'inline-block',
+  paddingTop:15,
+  paddingBottom:15,
   marginRight: '20px',
   fontSize: '18px',
   cursor: 'pointer',
@@ -29,9 +31,10 @@ const Link = styled('a')(() => ({
 
 const TopNavbar = () => {
   return (
-    <div>
+    <Headroom>
+       <div>
       <Navbar>
-        <ul style={{}}>
+        <ul style={{margin:0}}>
           <ListItem>
             <Link href={'/'}>Home</Link>
           </ListItem>
@@ -41,7 +44,8 @@ const TopNavbar = () => {
         </ul>
       </Navbar>
     </div>
-  );
+    </Headroom>
+   );
 };
 
 export default TopNavbar;
